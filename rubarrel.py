@@ -9,13 +9,13 @@ class Rubarrel():
                 self.rows.append([])
                 for _ in range(4):
                     self.rows[i].append(i)
-            self.out = [6, 6, 6]
+            self.out = [5, 5, 5]
             self.side = "right"
         else:
             self.rows = []
             for i in range(5):
                 self.rows.append(list(state_vec[i * 4:i * 4 + 4]))
-            self.out = state_vec[19:22]
+            self.out = state_vec[20:23]
             self.side = "left" if state_vec[-1] else "right"
 
     def __repr__(self):
@@ -61,7 +61,7 @@ class Rubarrel():
         for row in self.rows:
             if not len(set(row)) == 1:
                 return False
-        if not self.out == [6, 6, 6]:
+        if not self.out == [5, 5, 5]:
             return False
         return True
 
@@ -92,10 +92,10 @@ class Player:
     def make_move(self, m_id):
         if self.move_dict[m_id] == "shift":
             self.barrel.shift()
-        if self.move_dict[m_id] == "nothing":
+        elif self.move_dict[m_id] == "nothing":
             pass
         else:
-            self.barrel.turn(*self.move_dict[m_id])
+            self.barrel.turn(*(self.move_dict[m_id]))
 
 
 state_vec = np.array([0, 0, 0, 0,
@@ -105,6 +105,6 @@ state_vec = np.array([0, 0, 0, 0,
                       4, 4, 4, 4,
                       5, 5, 5,
                       0])
-moves = np.array([1, 2, 2, 2])
+moves = np.array([-1,0,2])
 player = Player(state_vec, moves)
 player.play()
