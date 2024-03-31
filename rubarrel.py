@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 class Rubarrel():
@@ -65,6 +66,17 @@ class Rubarrel():
             return False
         return True
 
+    def get_state(self):
+        state = []
+        for row in self.rows:
+            state += row
+        state += self.out
+        if self.out == "left":
+            state.append(0)
+        else:
+            state.append(1)
+        return torch.tensor(state)
+
 
 class Player:
     def __init__(self, state_vec, moves):
@@ -86,8 +98,8 @@ class Player:
     def play(self):
         self.barrel = Rubarrel(state_vec)
         for move in self.moves:
-            self.make_move(move)
-        print(self.barrel)
+            self.make_move(move.item())
+        return self.barrel.get_state()
 
     def make_move(self, m_id):
         if self.move_dict[m_id] == "shift":
@@ -98,13 +110,14 @@ class Player:
             self.barrel.turn(*(self.move_dict[m_id]))
 
 
-state_vec = np.array([0, 0, 0, 0,
+state_vec = torch.tensor([0, 0, 0, 0,
                       1, 1, 1, 1,
                       2, 2, 2, 2,
                       3, 3, 3, 3,
                       4, 4, 4, 4,
                       5, 5, 5,
                       0])
-moves = np.array([-1,0,2])
+moves = torch.tensor([-1, 0, 2])
 player = Player(state_vec, moves)
 player.play()
+
