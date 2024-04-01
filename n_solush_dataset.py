@@ -43,8 +43,27 @@ class RubarrelDataset(Dataset):
         moves = torch.tensor(sequence)
         player = Player(None, moves)
         state = player.play()
-        solush = torch.tensor(list(reversed(list(moves))))
+        solush = moves
+        print(solush)
+        for i, m_id in enumerate(reversed(moves)):
+            m_id = int(m_id)
+            if m_id == 0:
+                solush[i] = 0
+            elif m_id == 1:
+                solush[i] = 3
+            elif m_id == 2:
+                solush[i] = 4
+            elif m_id == 3:
+                solush[i] = 1
+            elif m_id == 4:
+                solush[i] = 2
+        print(solush)
+
 
         return state, solush
-data = RubarrelDataset()
-print(data[3])
+data = RubarrelDataset(1000,2)
+state, solush = data[2]
+print(Rubarrel(state))
+player = Player(state, solush)
+print(player.play())
+
