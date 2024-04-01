@@ -71,7 +71,7 @@ class Rubarrel():
         for row in self.rows:
             state += row
         state += self.out
-        if self.out == "left":
+        if self.side == "left":
             state.append(0)
         else:
             state.append(1)
