@@ -79,10 +79,13 @@ class Rubarrel():
 
 
 class Player:
-    def __init__(self, state_vec, moves):
+    def __init__(self, state_vec, moves = None):
         self.barrel = Rubarrel(state_vec)
         self.state_vec = state_vec
-        self.moves = moves
+        if moves is not None:
+            self.moves = moves
+        else:
+            self.moves = [-1]
 
         self.move_dict = {-1: "nothing",
                           0: "shift",
@@ -95,11 +98,17 @@ class Player:
                           7: ("left", -2),
                           8: ("right", -2)}
 
-    def play(self):
-        self.barrel = Rubarrel(state_vec)
+    def play(self, moves = None):
+        self.barrel = Rubarrel(self.state_vec)
+        if moves is not None:
+            self.moves = moves
         for move in self.moves:
-            self.make_move(move.item())
-        return self.barrel.get_state()
+            try:
+                self.make_move(move.item())
+            except:
+                self.make_move(move)
+        self.state_vec = self.barrel.get_state()
+        return self.state_vec
 
     def make_move(self, m_id):
         if self.move_dict[m_id] == "shift":
@@ -117,7 +126,8 @@ state_vec = torch.tensor([0, 0, 0, 0,
                       4, 4, 4, 4,
                       5, 5, 5,
                       0])
-moves = torch.tensor([-1, 0, 2])
-player = Player(state_vec, moves)
-player.play()
-
+moves = torch.tensor([-1,3])
+player = Player(state_vec)
+print(player.play())
+print(player.play(moves))
+print(player.play([1,-1]))
