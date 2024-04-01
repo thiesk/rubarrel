@@ -11,13 +11,13 @@ class Rubarrel():
                 for _ in range(4):
                     self.rows[i].append(i)
             self.out = [5, 5, 5]
-            self.side = "right"
+            self.side = "left"
         else:
             self.rows = []
             for i in range(5):
                 self.rows.append(list(state_vec[i * 4:i * 4 + 4]))
             self.out = state_vec[20:23]
-            self.side = "left" if state_vec[-1] else "right"
+            self.side = "right" if state_vec[-1] else "left"
 
     def __repr__(self):
         repr = ""
@@ -53,7 +53,7 @@ class Rubarrel():
                 if self.side == "left":
                     self.rows[i] = [self.out[m[i]]] + row[:-1]
                     self.out[m[i]] = row[-1]
-                if self.side == "right":
+                elif self.side == "right":
                     self.rows[i] = row[1:] + [self.out[m[i]]]
                     self.out[m[i]] = row[0]
         self.side = "left" if self.side == "right" else "right"
@@ -73,7 +73,7 @@ class Rubarrel():
         state += self.out
         if self.side == "left":
             state.append(0)
-        else:
+        elif self.side == "right":
             state.append(1)
         return torch.tensor(state)
 
@@ -103,6 +103,7 @@ class Player:
         if moves is not None:
             self.moves = moves
         for move in self.moves:
+            print("d", self.barrel.out)
             try:
                 self.make_move(move.item())
             except:
@@ -126,8 +127,9 @@ state_vec = torch.tensor([0, 0, 0, 0,
                       4, 4, 4, 4,
                       5, 5, 5,
                       0])
-moves = torch.tensor([-1,3])
+moves = torch.tensor([0,3])
 player = Player(state_vec)
 print(player.play())
+print(player.barrel.get_state())
 print(player.play(moves))
-print(player.play([1,-1]))
+print(player.play([1,0]))

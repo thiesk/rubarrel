@@ -44,7 +44,7 @@ class RubarrelDataset(Dataset):
         player = Player(None, moves)
         state = player.play()
         solush = moves
-        print(solush)
+        print("f",solush)
         for i, m_id in enumerate(reversed(moves)):
             m_id = int(m_id)
             if m_id == 0:
@@ -57,13 +57,13 @@ class RubarrelDataset(Dataset):
                 solush[i] = 1
             elif m_id == 4:
                 solush[i] = 2
-        print(solush)
+        print("f",solush)
 
 
         return state, solush
 data = RubarrelDataset(1000,2)
 state, solush = data[2]
-print(Rubarrel(state))
+print("1",Rubarrel(state))
 player = Player(state, solush)
-print(player.play())
-
+print("s",player.state_vec)
+print("s",player.play(solush))
