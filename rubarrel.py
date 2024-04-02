@@ -47,22 +47,35 @@ class Rubarrel():
         self.rows = new_rows
 
     def shift(self):
-        m = {0: 0, 2: 1, 3: 2}
-        for i, row in enumerate(self.rows):
-            if i in [0, 2, 3]:
+        old_out = self.out
+        self.out = []
+        old_rows = self.rows
+        self.rows = []
+        out_map = {0:0,2:1,3:2}
+        for i, row in enumerate(old_rows):
+            if i in [0,2,3]:
                 if self.side == "left":
-                    self.rows[i] = [self.out[m[i]]] + row[:-1]
-                    self.out[m[i]] = row[-1]
+                    self.out.append(row[-1])
+                    self.rows.append([old_out[out_map[i]]])
+                    self.rows[i] += row[:-1]
                 elif self.side == "right":
-                    self.rows[i] = row[1:] + [self.out[m[i]]]
-                    self.out[m[i]] = row[0]
+                    self.out.append(row[0])
+                    self.rows.append(row[1:])
+                    self.rows[i].append(old_out[out_map[i]])
+            else:
+                self.rows.append(row)
         self.side = "left" if self.side == "right" else "right"
 
     def solved(self):
         for row in self.rows:
-            if not len(set(row)) == 1:
+            try:
+                row = [tensor.item() for tensor in row]
+            except:
+                pass
+
+            if not len(set(list(row))) == 1:
                 return False
-        if not self.out == [5, 5, 5]:
+        if not (all(self.out) < 5):
             return False
         return True
 
@@ -76,60 +89,3 @@ class Rubarrel():
         elif self.side == "right":
             state.append(1)
         return torch.tensor(state)
-
-
-class Player:
-    def __init__(self, state_vec, moves = None):
-        self.barrel = Rubarrel(state_vec)
-        self.state_vec = state_vec
-        if moves is not None:
-            self.moves = moves
-        else:
-            self.moves = [-1]
-
-        self.move_dict = {-1: "nothing",
-                          0: "shift",
-                          1: ("left", 1),
-                          2: ("right", 1),
-                          3: ("left", -1),
-                          4: ("right", -1),
-                          5: ("left", 2),
-                          6: ("right", 2),
-                          7: ("left", -2),
-                          8: ("right", -2)}
-
-    def play(self, moves = None):
-        self.barrel = Rubarrel(self.state_vec)
-        if moves is not None:
-            self.moves = moves
-        for move in self.moves:
-            print("d", self.barrel.out)
-            try:
-                self.make_move(move.item())
-            except:
-                self.make_move(move)
-        self.state_vec = self.barrel.get_state()
-        return self.state_vec
-
-    def make_move(self, m_id):
-        if self.move_dict[m_id] == "shift":
-            self.barrel.shift()
-        elif self.move_dict[m_id] == "nothing":
-            pass
-        else:
-            self.barrel.turn(*(self.move_dict[m_id]))
-
-
-state_vec = torch.tensor([0, 0, 0, 0,
-                      1, 1, 1, 1,
-                      2, 2, 2, 2,
-                      3, 3, 3, 3,
-                      4, 4, 4, 4,
-                      5, 5, 5,
-                      0])
-moves = torch.tensor([0,3])
-player = Player(state_vec)
-print(player.play())
-print(player.barrel.get_state())
-print(player.play(moves))
-print(player.play([1,0]))

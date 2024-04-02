@@ -1,62 +1,78 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader
+import numpy as np
 from n_solush_dataset import RubarrelDataset
 
 
-def collate_fn(batch):
-    inputs, targets = zip(*batch)
-    padded_inputs = pad_sequence(inputs, batch_first=True)
-    padded_targets = pad_sequence(targets, batch_first=True)
-    return padded_inputs, padded_targets
-
-dataset = RubarrelDataset(32000, 5)
+# Define the Transformer model
 class TransformerModel(nn.Module):
-    def __init__(self, input_vocab_size, output_vocab_size, embedding_dim, num_layers, hidden_size):
+    def __init__(self, input_size, target_size, hidden_size=128, num_layers=2, num_heads=8, dropout=0.1):
         super(TransformerModel, self).__init__()
-        self.embedding = nn.Embedding(input_vocab_size, embedding_dim)
-        self.encoder = nn.TransformerEncoderLayer(embedding_dim, dim_feedforward=hidden_size, nhead=8)
-        self.decoder = nn.Linear(embedding_dim, output_vocab_size)
+        self.embedding_src = nn.Embedding(input_size, hidden_size)
+        self.embedding_tgt = nn.Embedding(target_size, hidden_size)  # Different embedding for target
+        self.transformer = nn.Transformer(d_model=hidden_size, nhead=num_heads, num_encoder_layers=num_layers,
+                                          num_decoder_layers=num_layers, dim_feedforward=hidden_size, dropout=dropout)
+        self.fc = nn.Linear(hidden_size, target_size)
 
-    def forward(self, input_tensor):
-        embedded_input = self.embedding(input_tensor)
-        encoded_input = self.encoder(embedded_input)
-        output_tensor = self.decoder(encoded_input)
-        return output_tensor
+    def forward(self, src, tgt):
+        print("s", src.size(), tgt.size())
+        src = self.embedding_src(src)
+        tgt = self.embedding_tgt(tgt)
+        output = self.transformer(src, tgt)
+        output = self.fc(output)
+        return output
 
-# Step 3: Define your model, criterion, and optimizer
-input_vocab_size = 5  # Adjust based on your input data
-output_vocab_size = 4  # Adjust based on your output data
-embedding_dim = 64
-num_layers = 4
-hidden_size = 128
 
-model = TransformerModel(input_vocab_size, output_vocab_size, embedding_dim, num_layers, hidden_size)
+# Generate some sample data
+# Replace this with your actual dataset loading
+def generate_sample_data(num_samples, input_size, target_size):
+    data = []
+    for _ in range(num_samples):
+        input_vector = np.random.randint(0, input_size, size=24)
+        target_vector = np.random.randint(0, target_size, size=10)
+        data.append((input_vector, target_vector))
+    return data
+
+
+# Data parameters
+input_size = 24  # example size
+target_size = 10  # example size
+batch_size = 32
+num_samples = 10000
+
+
+# Create dataset and dataloader
+dataset = RubarrelDataset(n_samples=num_samples, n_actions=target_size)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# Initialize model, loss function, and optimizer
+model = TransformerModel(input_size, target_size)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# Step 4: Create DataLoader for batching and shuffling data
-batch_size = 32  # Adjust based on your memory constraints and dataset size
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-
-# Step 5: Training loop
-num_epochs = 10  # Adjust as needed
+# Training loop
+num_epochs = 10
 for epoch in range(num_epochs):
-    total_loss = 0.0
-    for batch in dataloader:
+    model.train()
+    total_loss = 0
+    for batch_idx, (inputs, targets) in enumerate(dataloader):
         optimizer.zero_grad()
-        input_data, target_data = batch
-        output = model(input_data)
-        loss = criterion(output.view(-1, output_vocab_size), target_data.view(-1))
+        outputs = model(inputs, targets)  # Ignore last target for input
+        loss = criterion(outputs, targets)  # Target shifted by 1
         loss.backward()
         optimizer.step()
-        total_loss += loss.item() * len(input_data)
+        total_loss += loss.item()
 
-    # Print average loss per epoch
-    average_loss = total_loss / len(dataset)
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Average Loss: {average_loss}')
+    print(f"Epoch {epoch + 1}, Loss: {total_loss / len(dataloader)}")
 
-# Step 6: Evaluation
-# Evaluate the trained model on a separate test set if available
+# Evaluation
+model.eval()
+with torch.no_grad():
+    # Sample inference
+    sample_input = torch.randint(0, input_size, (1, 24))
+    sample_target = torch.randint(0, target_size, (1, 10))
+    output = model(sample_input, sample_target)
+    print("Sample output:", output)
